@@ -1,0 +1,18 @@
+#!/bin/bash
+set -Eeuxo pipefail
+
+./bin/mapreduce restart
+mapreduce-submit \
+    --input tests/testdata/input_small \
+    --output output \
+    --mapper tests/testdata/exec/wc_map_slow.sh \
+    --reducer tests/testdata/exec/wc_reduce_slow.sh \
+    --nmappers 2 \
+    --nreducers 2
+# print the task information
+# grep 'Received task MapTask' var/log/mapreduce-worker-600*
+sleep 2
+pgrep -f mapreduce-worker | head -n1 | xargs kill
+tail -f var/log/mapreduce-worker-*.log | grep --line-buffered -i received
+
+./bin/mapreduce stop
